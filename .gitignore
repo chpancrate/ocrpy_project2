@@ -1,0 +1,4 @@
+# ignore venv files
+/env
+# ignore result file
+scrap_page.csv
