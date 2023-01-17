@@ -1,4 +1,5 @@
 # ignore venv files
 /env
-# ignore result file
+# ignore result files
 scrap_page.csv
+data/
