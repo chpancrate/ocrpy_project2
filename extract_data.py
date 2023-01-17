@@ -3,10 +3,11 @@
 #    Program to scrap dat from the website :
 #     http://books.toscrape.com/
 # 
-#  Phase 2 : 
-#  extraction des urls des pages livres sur une page catégories du site
-#  extraction des données de chaque livres
-#  les données sont mises dans un répertoire data dans un fichier category.csv
+#  Phase 3 :
+#  scraping of category on the site 
+#  scraping of the book pages from a category page of the site
+#  scraping of the data for each book
+#  the data are placed in a ./data/'category name'.csv 
 #
 #==========================================================
 
@@ -17,7 +18,7 @@ import csv
 import os
 
 # get the web page for the book and parsing
-url = "http://books.toscrape.com/catalogue/category/books/default_15/index.html"
+url = "http://books.toscrape.com/index.html"
 
 def scrap_book(p_url):
     # get the web page for the book and parse it
@@ -47,7 +48,7 @@ def scrap_book(p_url):
     book_availability = book_availability.replace("In stock (","")
     book_availability = book_availability.replace(" available)","")
 
-    # Test if the description section exist because some book pages do not have it
+    # test if the description section exists because some book page do not have it
     exist_description = soup.find("div", id="product_description")
     #print(exist_description)
     
@@ -60,6 +61,9 @@ def scrap_book(p_url):
 
     # The book category is located in the 3rd item of the breadcrumb 
     category = soup.find("ul", class_="breadcrumb").find_all("li")[2].a.text 
+    # formatting to match the file name : lower case and no '-'
+    category = category.lower()
+    category = category.replace("-"," ")
     #print(category)
 
     # The book rating is in the class name of <p class="star-rating XXXX>  in the main product div
@@ -86,7 +90,7 @@ def scrap_book(p_url):
     print("image_url : " + book_image_url)
     '''
 
-    file_name = 'data/' + category + ".csv"
+    file_name = 'data/' + category.lower() + ".csv"
 
     # open the file <category>.cvs in append mode
     with open(file_name, 'a', encoding="utf-8", newline='') as file_csv:
@@ -143,7 +147,7 @@ def scrap_category(p_url):
         work_url=article.find("div", class_="image_container").find("a")["href"]
         book_url=work_url.replace("../../..", "http://books.toscrape.com/catalogue")
         scrap_book(book_url)
-    #   print(book_url)
+        #print(book_url)
 
     
     pager = soup.find("li", class_="next")
@@ -153,22 +157,43 @@ def scrap_category(p_url):
         #print(next_url)
         scrap_category(next_url) 
     else:
-#       print("FIN DES PAGES")
+        #print("FIN DES PAGES")
         return
 
 page = requests.get(url)
+
 soup = BeautifulSoup(page.content, 'html.parser')
 #print(soup)
 
+# get the categories from the menu on the left side of the website
+categories = soup.find("ul", class_="nav nav-list").find_all("li")
 
-# retrieve the category from the 3rd item of the breadcrumb 
-category = soup.find("ul", class_="breadcrumb").find_all("li")[2].text 
-#print(category)
+# get rid of the first element as it is nit a category
+categories.pop(0)
 
-file_name = 'data/' + category + ".csv"
-open_category_file(file_name)
+for category in categories:
 
-cat_url = url.replace("index.html","")
-#print(cat_url)    
+        #retrieve partial url 
+        category_url=category.find("a")["href"]
 
-scrap_category(url)
+        # create the file name from the partial url 
+        file_name = category_url.replace("catalogue/category/books/","")
+        file_name = file_name.split("_")[0]
+        file_name = file_name.lower()
+        file_name = file_name.replace("-"," ")
+        file_name = 'data/' + file_name + ".csv"
+        #print(file_name)
+        
+        open_category_file(file_name)
+
+        #create the full url from the partial url
+        category_url="http://books.toscrape.com/" + category_url
+        #print(category_url)
+
+        cat_url = url.replace("index.html","")
+        #print(cat_url)    
+
+        scrap_category(category_url)
+        
+
+
