@@ -3,11 +3,12 @@
 #    Program to scrap dat from the website :
 #     http://books.toscrape.com/
 # 
-#  Phase 3 :
+#  Phase 4 :
 #  scraping of category on the site 
 #  scraping of the book pages from a category page of the site
 #  scraping of the data for each book
 #  the data are placed in a ./data/'category name'.csv 
+#  the image files are retrieved and stored in a directory./image/'category name' 
 #
 #==========================================================
 
@@ -16,8 +17,9 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 import os
+from slugify import slugify
 
-# get the web page for the book and parsing
+# define the website to be scraped
 url = "http://books.toscrape.com/index.html"
 
 def scrap_book(p_url):
@@ -48,7 +50,7 @@ def scrap_book(p_url):
     book_availability = book_availability.replace("In stock (","")
     book_availability = book_availability.replace(" available)","")
 
-    # test if the description section exists because some book page do not have it
+    # test if the description section exists because some book pages do not have it
     exist_description = soup.find("div", id="product_description")
     #print(exist_description)
     
@@ -61,7 +63,7 @@ def scrap_book(p_url):
 
     # The book category is located in the 3rd item of the breadcrumb 
     category = soup.find("ul", class_="breadcrumb").find_all("li")[2].a.text 
-    # formatting to match the file name : lower case and no '-'
+    # formatting to match the file name : lower case no -
     category = category.lower()
     category = category.replace("-"," ")
     #print(category)
@@ -76,6 +78,22 @@ def scrap_book(p_url):
     book_image_url = soup.find("div", class_="item active").find_all("img")[0]['src']
     book_image_url = book_image_url.replace("../..", "http://books.toscrape.com")
     #print(book_image_url)
+
+    file_name_img = slugify(book_title)
+
+    file_name_img = "images/" + category + "/" + file_name_img + ".jpg" 
+    newdir = 'images/' + category + "/" 
+
+    if not os.path.exists(newdir):
+        os.makedirs(newdir)
+
+    image = requests.get(book_image_url)
+    if image.status_code == 200:
+        with open(file_name_img, 'wb') as file_img:
+            file_img.write(image.content)
+            #print('Image sucessfully downloaded: ',file_name)
+    else:
+        print("Image " + book_image_url + " not downloaded")
 
     ''' use for debug
     print("page url : " + url)
@@ -154,7 +172,7 @@ def scrap_category(p_url):
     if pager != None:
         next_url=pager.find("a")["href"]
         next_url=cat_url + next_url
-        #print(next_url)
+        #print("next_url = ", next_url)
         scrap_category(next_url) 
     else:
         #print("FIN DES PAGES")
@@ -165,16 +183,16 @@ page = requests.get(url)
 soup = BeautifulSoup(page.content, 'html.parser')
 #print(soup)
 
-# get the categories from the menu on the left side of the website
 categories = soup.find("ul", class_="nav nav-list").find_all("li")
 
-# get rid of the first element as it is nit a category
+# get rid of the first element as it is not a category
 categories.pop(0)
 
 for category in categories:
 
-        #retrieve partial url 
+        # retrieve partial url 
         category_url=category.find("a")["href"]
+        #print("category_url = ", category_url)
 
         # create the file name from the partial url 
         file_name = category_url.replace("catalogue/category/books/","")
@@ -186,12 +204,12 @@ for category in categories:
         
         open_category_file(file_name)
 
-        #create the full url from the partial url
+        # create the full url from the partial url
         category_url="http://books.toscrape.com/" + category_url
         #print(category_url)
 
-        cat_url = url.replace("index.html","")
-        #print(cat_url)    
+        cat_url = category_url.replace("index.html","")
+        #print("cat_url = ", cat_url)    
 
         scrap_category(category_url)
         
