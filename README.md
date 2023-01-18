@@ -11,10 +11,10 @@ The image files are stored in a 'images/' directory in the vorking directory. Th
 ## Requirements
 The modules needed for the scripts are in requirements.txt. In order to install them use the command :
 ```
-pip install < requirements.txt
+pip install -r requirements.txt
 ```
 ## How to run
-You need to have python installed on your computer in order to run the script. Copy extract_data.py in the directory where you wants the data to be stored and run the command : 
+You need to have python installed on your computer in order to run the script. Copy extract_data.py in the directory where you want the data to be stored and run the command : 
 ```
 python extract_data.py
 ```

@@ -4,3 +4,5 @@
 scrap_page.csv
 data/
 images/
+#ignore cache files
+__pycache__/
